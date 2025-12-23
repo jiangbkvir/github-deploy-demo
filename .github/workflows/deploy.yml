@@ -1,57 +1,133 @@
+# ========================================
+# GitHub Actions 工作流配置
+# 名称: Docker Build Test
+# 功能: 构建 Docker 镜像、运行测试、触发本地自动部署
+# ========================================
+
 name: Docker Build Test
 
+# ========================================
+# 触发条件 (Triggers)
+# ========================================
 on:
+  # 推送到 main 或 master 分支时触发
   push:
     branches: [main, master]
+  # 针对 main 或 master 分支的 PR 时触发
   pull_request:
     branches: [main, master]
+  # 允许在 GitHub Actions 页面手动触发
   workflow_dispatch:
 
+# ========================================
+# 环境变量 (Environment Variables)
+# ========================================
 env:
-  # 使用 ngrok 等内网穿透工具暴露本地 webhook 服务
-  # 示例: https://xxxx-xx-xx-xx-xx.ngrok-free.app
+  # Cloudflare Tunnel 公网地址（通过 GitHub Secrets 配置）
+  # 用途: 将 GitHub Actions 的请求转发到本地 Webhook 服务
+  # 配置路径: Repository Settings → Secrets and variables → Actions
   WEBHOOK_URL: ${{ secrets.WEBHOOK_URL }}
+
+  # Webhook 密钥（可选，用于验证请求来源）
   WEBHOOK_SECRET: ${{ secrets.WEBHOOK_SECRET }}
 
+# ========================================
+# 任务定义 (Jobs)
+# ========================================
 jobs:
-  # 构建 Docker 镜像测试
+  # 任务 1: 构建 Docker 镜像并测试
   build-test:
     name: Build Docker Image (Test)
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-latest  # 运行环境: Ubuntu 最新版
 
+    # 使用 Docker DinD (Docker-in-Docker) 服务
+    # 说明: 允许在容器内运行 Docker 命令
     services:
       app:
         image: docker:24-dind
-        options: --privileged
+        options: --privileged  # 需要特权模式
 
+    # 步骤定义 (Steps)
     steps:
+      # ========================================
+      # 步骤 1: 检出代码
+      # ========================================
       - name: Checkout 代码
-        uses: actions/checkout@v4
+        uses: actions/checkout@v4  # 官方 Action: 检出仓库代码
 
+      # ========================================
+      # 步骤 2: 设置 Docker Buildx
+      # ========================================
       - name: 设置 Docker Buildx
         uses: docker/setup-buildx-action@v3
+        # 说明: Buildx 是 Docker 的增强构建工具
+        # 功能: 多平台构建、缓存、高级构建特性
 
+      # ========================================
+      # 步骤 3: 构建 Docker 镜像
+      # ========================================
       - name: 构建并加载镜像
         uses: docker/build-push-action@v5
         with:
-          context: .
-          push: false
-          load: true
-          tags: test-app:latest
-          caches: type=gha
+          context: .              # 构建上下文: 项目根目录
+          push: false             # 不推送到镜像仓库
+          load: true              # 加载镜像到 Docker（用于后续测试）
+          tags: test-app:latest   # 镜像标签
+          caches: type=gha        # 使用 GitHub Actions 缓存加速构建
 
+      # ========================================
+      # 步骤 4: 运行容器测试
+      # ========================================
       - name: 运行容器测试
         run: |
+          # 后台运行测试容器
           docker run -d --name test-app -p 3000:3000 test-app:latest
+
+          # 等待服务启动
           sleep 5
+
+          # 测试健康检查端点
+          # -f: 失败时返回非零退出码
           curl -f http://localhost:3000/health || exit 1
+
+          # 打印容器日志（用于调试）
           docker logs test-app
 
-      # 触发本地 Webhook（需要配置内网穿透）
+      # ========================================
+      # 步骤 5: 触发本地自动部署（仅 main 分支）
+      # ========================================
       - name: 触发本地自动部署
+        # 条件: 仅当推送到 main 分支且配置了 WEBHOOK_URL
         if: github.ref == 'refs/heads/main' && env.WEBHOOK_URL != ''
         run: |
+          # 发送 POST 请求到本地 Webhook 服务
+          # 通过 Cloudflare Tunnel 转发
           curl -X POST ${{ env.WEBHOOK_URL }}/webhook/deploy \
             -H "Content-Type: application/json" \
             -H "X-Webhook-Secret: ${{ env.WEBHOOK_SECRET }}" \
-            -d '{"action":"deploy","commit":"${{ github.sha }}","branch":"${{ github.ref_name }}"}'
+            -d '{
+              "action":"deploy",
+              "commit":"${{ github.sha }}",
+              "branch":"${{ github.ref_name }}",
+              "author":"${{ github.actor }}"
+            }'
+
+# ========================================
+# 工作流说明
+# ========================================
+#
+# 触发方式:
+#   1. git push origin main          # 自动触发
+#   2. 创建 Pull Request             # 自动触发
+#   3. GitHub Actions 页面手动点击   # 手动触发
+#
+# 配置要求:
+#   1. 在仓库 Settings → Secrets 中配置:
+#      - WEBHOOK_URL: Cloudflare Tunnel 地址
+#      - WEBHOOK_SECRET: Webhook 密钥（可选）
+#
+# 本地部署要求:
+#   1. 运行 Webhook 服务: node webhook-server.js
+#   2. 运行 Cloudflare Tunnel: cloudflared tunnel --url http://localhost:4000
+#
+# ========================================
