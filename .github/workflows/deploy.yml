@@ -13,6 +13,11 @@ jobs:
     name: Build Docker Image (Test)
     runs-on: ubuntu-latest
 
+    services:
+      app:
+        image: docker:24-dind
+        options: --privileged
+
     steps:
       - name: Checkout 代码
         uses: actions/checkout@v4
@@ -20,18 +25,18 @@ jobs:
       - name: 设置 Docker Buildx
         uses: docker/setup-buildx-action@v3
 
-      - name: 构建镜像
+      - name: 构建并加载镜像
         uses: docker/build-push-action@v5
         with:
           context: .
           push: false
-          tags: github-deploy-demo:test
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
+          load: true
+          tags: test-app:latest
+          caches: type=gha
 
-      - name: 测试镜像
+      - name: 运行容器测试
         run: |
-          docker run -d --name test-app -p 3000:3000 github-deploy-demo:test
+          docker run -d --name test-app -p 3000:3000 test-app:latest
           sleep 5
           curl -f http://localhost:3000/health || exit 1
-          docker stop test-app
+          docker logs test-app
