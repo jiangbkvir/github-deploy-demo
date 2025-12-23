@@ -1,4 +1,6 @@
-# 构建阶段 - 前端
+# ================================
+# 阶段 1: 构建前端
+# ================================
 FROM node:18-alpine AS frontend-builder
 
 WORKDIR /app/frontend
@@ -15,22 +17,45 @@ COPY frontend-vue/ ./
 # 构建前端
 RUN npm run build
 
-# 运行阶段 - 后端
-FROM node:18-alpine
+# ================================
+# 阶段 2: 构建后端
+# ================================
+FROM node:18-alpine AS backend-builder
 
 WORKDIR /app
 
 # 复制后端依赖文件
-COPY backend/package*.json ./backend/
+COPY backend/package*.json ./
 
 # 安装后端依赖
-RUN cd backend && npm install --production
+RUN npm install --production
 
 # 复制后端源代码
-COPY backend/ ./backend/
+COPY backend/ ./
+
+# ================================
+# 阶段 3: 前端 Nginx 镜像
+# ================================
+FROM nginx:alpine AS frontend
 
 # 从构建阶段复制前端构建产物
-COPY --from=frontend-builder /app/frontend/dist ./frontend/dist/
+COPY --from=frontend-builder /app/frontend/dist /usr/share/nginx/html
+
+# 复制 Nginx 配置
+COPY nginx/default.conf /etc/nginx/conf.d/default.conf
+
+# 暴露端口
+EXPOSE 80
+
+# ================================
+# 阶段 4: 后端运行镜像
+# ================================
+FROM node:18-alpine AS backend
+
+WORKDIR /app
+
+# 从后端构建阶段复制依赖和代码
+COPY --from=backend-builder /app /app
 
 # 暴露端口
 EXPOSE 3000
@@ -39,4 +64,4 @@ EXPOSE 3000
 ENV NODE_ENV=production
 
 # 启动应用
-CMD ["node", "backend/server.js"]
+CMD ["node", "server.js"]
