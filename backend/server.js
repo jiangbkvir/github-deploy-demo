@@ -17,10 +17,12 @@ app.get('/health', (req, res) => {
 app.get('/api', (req, res) => {
     res.json({
         success: true,
-        message: 'Hello from Node.js Backend! 部署成功！',
+        message: '🎉 欢迎使用 GitHub Actions 自动部署！代码已更新到 v2.0',
         timestamp: new Date().toLocaleString('zh-CN', { timeZone: 'Asia/Shanghai' }),
         environment: process.env.NODE_ENV || 'development',
-        version: '1.0.0'
+        version: '2.0.0',
+        author: 'jiangbkvir',
+        features: ['Docker 容器化', 'GitHub Actions CI/CD', '前端 + Node.js 后端']
     });
 });
 
