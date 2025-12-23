@@ -1,17 +1,6 @@
 <template>
   <div id="app">
-    <nav class="navbar">
-      <div class="nav-container">
-        <h1 class="nav-title">🚀 GitHub Actions 自动部署</h1>
-        <div class="nav-links">
-          <router-link to="/">首页</router-link>
-          <router-link to="/about">关于</router-link>
-        </div>
-      </div>
-    </nav>
-    <main class="main-content">
-      <router-view />
-    </main>
+    <router-view />
   </div>
 </template>
 
@@ -21,59 +10,56 @@ import { useAppStore } from './stores/app'
 
 const appStore = useAppStore()
 
+// 预加载数据
 onMounted(() => {
-  appStore.fetchApiData()
+  appStore.fetchAllData()
 })
 </script>
 
-<style scoped>
+<style>
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  background: #f5f7fa;
+  color: #333;
+  line-height: 1.6;
+}
+
 #app {
   min-height: 100vh;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
 }
 
-.navbar {
-  background: rgba(255, 255, 255, 0.95);
-  backdrop-filter: blur(10px);
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-  padding: 1rem 2rem;
-}
-
-.nav-container {
-  max-width: 1200px;
-  margin: 0 auto;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.nav-title {
-  font-size: 1.5rem;
-  margin: 0;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-}
-
-.nav-links {
-  display: flex;
-  gap: 2rem;
-}
-
-.nav-links a {
+a {
+  color: #667eea;
   text-decoration: none;
-  color: #333;
-  font-weight: 500;
   transition: color 0.3s;
 }
 
-.nav-links a:hover,
-.nav-links a.router-link-active {
-  color: #667eea;
+a:hover {
+  color: #764ba2;
 }
 
-.main-content {
-  padding: 2rem;
+/* 滚动条样式 */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #f1f1f1;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #c1c1c1;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #a8a8a8;
 }
 </style>

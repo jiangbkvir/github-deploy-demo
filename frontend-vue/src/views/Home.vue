@@ -1,51 +1,169 @@
 <template>
   <div class="home">
-    <div class="container">
-      <div class="card">
-        <h2 class="title">前端 + Node.js 后端 | Vue 3 + TypeScript</h2>
-        <p class="subtitle">版本 3.0 | 自动部署已启用</p>
-
-        <div class="status" :class="statusClass">
+    <!-- Hero Section -->
+    <div class="hero-section">
+      <div class="hero-content">
+        <h1 class="hero-title">
+          <span class="gradient-text">GitHub Actions</span>
+          <br>
+          <span class="title-white">自动部署演示</span>
+        </h1>
+        <p class="hero-subtitle">前后端分离架构 | Vue 3 + TypeScript + Node.js + Docker + Nginx</p>
+        <div class="status-badge" :class="statusClass">
           {{ statusText }}
         </div>
+      </div>
+    </div>
 
-        <button class="btn-refresh" @click="appStore.fetchApiData()">
-          {{ appStore.loading ? '加载中...' : '刷新数据' }}
-        </button>
-
-        <div v-if="appStore.apiData" class="data-card">
-          <h3>后端响应</h3>
-          <p class="message">{{ appStore.apiData.message }}</p>
-          <div class="info-grid">
-            <div class="info-item">
-              <span class="label">版本</span>
-              <span class="value">{{ appStore.apiData.version }}</span>
-            </div>
-            <div class="info-item">
-              <span class="label">作者</span>
-              <span class="value">{{ appStore.apiData.author }}</span>
-            </div>
-            <div class="info-item">
-              <span class="label">环境</span>
-              <span class="value">{{ appStore.apiData.environment }}</span>
-            </div>
-            <div class="info-item">
-              <span class="label">服务器时间</span>
-              <span class="value">{{ appStore.apiData.timestamp }}</span>
-            </div>
+    <!-- Stats Cards -->
+    <div v-if="statsData" class="stats-section">
+      <div class="stats-grid">
+        <div class="stat-card">
+          <div class="stat-icon">📊</div>
+          <div class="stat-content">
+            <div class="stat-value">{{ statsData.requests.total }}</div>
+            <div class="stat-label">总请求数</div>
           </div>
-          <div class="features">
-            <h4>特性</h4>
-            <ul>
-              <li v-for="feature in appStore.apiData.features" :key="feature">
-                {{ feature }}
-              </li>
-            </ul>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon">✅</div>
+          <div class="stat-content">
+            <div class="stat-value">{{ statsData.requests.successRate }}</div>
+            <div class="stat-label">成功率</div>
+          </div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon">🚀</div>
+          <div class="stat-content">
+            <div class="stat-value">{{ statsData.deployment.totalDeploys }}</div>
+            <div class="stat-label">部署次数</div>
+          </div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon">⚡</div>
+          <div class="stat-content">
+            <div class="stat-value">{{ statsData.performance.avgResponseTime }}</div>
+            <div class="stat-label">平均响应</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="content-section">
+      <div class="grid-layout">
+        <!-- API Response Card -->
+        <div class="card">
+          <div class="card-header">
+            <h2>后端响应</h2>
+            <button class="refresh-btn" @click="appStore.fetchAllData()" :disabled="appStore.loading">
+              <span v-if="appStore.loading">⏳</span>
+              <span v-else>🔄</span>
+            </button>
+          </div>
+          <div v-if="appStore.apiData" class="card-body">
+            <p class="message">{{ appStore.apiData.message }}</p>
+            <div class="info-list">
+              <div class="info-item">
+                <span class="label">版本</span>
+                <span class="value">{{ appStore.apiData.version }}</span>
+              </div>
+              <div class="info-item">
+                <span class="label">架构</span>
+                <span class="value">{{ appStore.apiData.architecture }}</span>
+              </div>
+              <div class="info-item">
+                <span class="label">环境</span>
+                <span class="value">{{ appStore.apiData.environment }}</span>
+              </div>
+              <div class="info-item">
+                <span class="label">更新时间</span>
+                <span class="value">{{ appStore.apiData.timestamp }}</span>
+              </div>
+            </div>
           </div>
         </div>
 
-        <div v-if="appStore.error" class="error-card">
-          <p>错误: {{ appStore.error }}</p>
+        <!-- Tech Stack Card -->
+        <div v-if="techStackData" class="card">
+          <div class="card-header">
+            <h2>技术栈</h2>
+          </div>
+          <div class="card-body">
+            <div class="tech-section">
+              <h3>前端</h3>
+              <div class="tech-grid">
+                <div v-for="tech in techStackData.frontend" :key="tech.name" class="tech-item">
+                  <span class="tech-icon">{{ tech.icon }}</span>
+                  <div class="tech-info">
+                    <div class="tech-name">{{ tech.name }}</div>
+                    <div class="tech-desc">{{ tech.description }}</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="tech-section">
+              <h3>后端</h3>
+              <div class="tech-grid">
+                <div v-for="tech in techStackData.backend" :key="tech.name" class="tech-item">
+                  <span class="tech-icon">{{ tech.icon }}</span>
+                  <div class="tech-info">
+                    <div class="tech-name">{{ tech.name }}</div>
+                    <div class="tech-desc">{{ tech.description }}</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Deployments Card -->
+        <div v-if="deploymentsData" class="card full-width">
+          <div class="card-header">
+            <h2>部署历史</h2>
+          </div>
+          <div class="card-body">
+            <div class="deployments-list">
+              <div v-for="dep in deploymentsData" :key="dep.id" class="deployment-item">
+                <div class="dep-status" :class="dep.status">{{ dep.status === 'success' ? '✓' : '✗' }}</div>
+                <div class="dep-info">
+                  <div class="dep-version">v{{ dep.version }}</div>
+                  <div class="dep-message">{{ dep.message }}</div>
+                </div>
+                <div class="dep-meta">
+                  <div class="dep-date">{{ dep.date }}</div>
+                  <div class="dep-commit">{{ dep.commit.slice(0, 7) }}</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- System Info Card -->
+        <div v-if="systemData" class="card">
+          <div class="card-header">
+            <h2>系统信息</h2>
+          </div>
+          <div class="card-body">
+            <div class="system-grid">
+              <div class="system-item">
+                <span class="system-icon">💻</span>
+                <span class="system-text">{{ systemData.platform }} {{ systemData.arch }}</span>
+              </div>
+              <div class="system-item">
+                <span class="system-icon">🟢</span>
+                <span class="system-text">{{ systemData.nodeVersion }}</span>
+              </div>
+              <div class="system-item">
+                <span class="system-icon">🔧</span>
+                <span class="system-text">{{ systemData.cpus }} 核心</span>
+              </div>
+              <div class="system-item">
+                <span class="system-icon">💾</span>
+                <span class="system-text">{{ systemData.totalMemory }}</span>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     </div>
@@ -53,7 +171,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, onMounted } from 'vue'
 import { useAppStore } from '../stores/app'
 
 const appStore = useAppStore()
@@ -66,163 +184,380 @@ const statusClass = computed(() => {
 })
 
 const statusText = computed(() => {
-  if (appStore.loading) return '正在请求后端...'
+  if (appStore.loading) return '正在加载...'
   if (appStore.error) return '连接失败'
-  if (appStore.apiData) return '连接成功'
-  return '正在连接后端服务...'
+  if (appStore.apiData) return '系统运行正常'
+  return '连接中...'
+})
+
+onMounted(() => {
+  appStore.fetchAllData()
 })
 </script>
 
 <style scoped>
 .home {
-  display: flex;
-  justify-content: center;
-  padding: 2rem 1rem;
+  min-height: 100vh;
 }
 
-.container {
-  width: 100%;
-  max-width: 600px;
-}
-
-.card {
-  background: white;
-  border-radius: 20px;
-  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
-  padding: 2rem;
-}
-
-.title {
-  font-size: 1.5rem;
-  margin-bottom: 0.5rem;
-  color: #333;
-}
-
-.subtitle {
-  color: #666;
-  margin-bottom: 1.5rem;
-  font-size: 0.9rem;
-}
-
-.status {
-  padding: 1rem;
-  border-radius: 10px;
-  margin-bottom: 1.5rem;
+/* Hero Section */
+.hero-section {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  padding: 4rem 2rem;
   text-align: center;
+}
+
+.hero-title {
+  font-size: 3rem;
+  font-weight: 800;
+  margin-bottom: 1rem;
+  line-height: 1.2;
+}
+
+.gradient-text {
+  background: linear-gradient(135deg, #fff 0%, #ffd700 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.title-white {
+  color: white;
+}
+
+.hero-subtitle {
+  color: rgba(255, 255, 255, 0.9);
+  font-size: 1.1rem;
+  margin-bottom: 2rem;
+}
+
+.status-badge {
+  display: inline-block;
+  padding: 0.5rem 1.5rem;
+  border-radius: 25px;
+  font-size: 0.9rem;
   font-weight: 500;
+  background: rgba(255, 255, 255, 0.2);
+  color: white;
+  backdrop-filter: blur(10px);
 }
 
 .status-loading {
-  background: #fff3cd;
-  color: #856404;
+  background: rgba(255, 193, 7, 0.3);
 }
 
 .status-success {
-  background: #d4edda;
-  color: #155724;
+  background: rgba(40, 167, 69, 0.3);
 }
 
 .status-error {
-  background: #f8d7da;
-  color: #721c24;
+  background: rgba(220, 53, 69, 0.3);
 }
 
-.btn-refresh {
-  width: 100%;
-  padding: 0.75rem 2rem;
-  border: none;
-  border-radius: 25px;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  color: white;
-  font-size: 1rem;
-  cursor: pointer;
-  transition: transform 0.2s, box-shadow 0.2s;
-  margin-bottom: 1.5rem;
+/* Stats Section */
+.stats-section {
+  max-width: 1200px;
+  margin: -2rem auto 2rem;
+  padding: 0 1rem;
 }
 
-.btn-refresh:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 5px 20px rgba(102, 126, 234, 0.4);
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 1rem;
 }
 
-.btn-refresh:active {
-  transform: translateY(0);
-}
-
-.data-card {
-  background: #f8f9fa;
-  border-radius: 10px;
+.stat-card {
+  background: white;
+  border-radius: 15px;
   padding: 1.5rem;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+  transition: transform 0.3s, box-shadow 0.3s;
 }
 
-.data-card h3 {
-  margin-top: 0;
-  margin-bottom: 1rem;
-  color: #495057;
+.stat-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 15px 40px rgba(0, 0, 0, 0.15);
+}
+
+.stat-icon {
+  font-size: 2.5rem;
+}
+
+.stat-content {
+  flex: 1;
+}
+
+.stat-value {
+  font-size: 1.8rem;
+  font-weight: 700;
+  color: #333;
+}
+
+.stat-label {
+  font-size: 0.85rem;
+  color: #666;
+  margin-top: 0.25rem;
+}
+
+/* Content Section */
+.content-section {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 2rem 1rem;
+}
+
+.grid-layout {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+  gap: 1.5rem;
+}
+
+.full-width {
+  grid-column: 1 / -1;
+}
+
+/* Cards */
+.card {
+  background: white;
+  border-radius: 20px;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.08);
+  overflow: hidden;
+}
+
+.card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1.5rem;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.card-header h2 {
+  margin: 0;
+  font-size: 1.2rem;
+  color: #333;
+}
+
+.refresh-btn {
+  background: none;
+  border: none;
+  font-size: 1.2rem;
+  cursor: pointer;
+  padding: 0.5rem;
+  border-radius: 8px;
+  transition: background 0.3s;
+}
+
+.refresh-btn:hover:not(:disabled) {
+  background: #f0f0f0;
+}
+
+.refresh-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.card-body {
+  padding: 1.5rem;
 }
 
 .message {
   color: #495057;
   line-height: 1.6;
-  margin-bottom: 1rem;
+  margin-bottom: 1.5rem;
 }
 
-.info-grid {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
+.info-list {
+  display: flex;
+  flex-direction: column;
   gap: 1rem;
-  margin-bottom: 1.5rem;
 }
 
 .info-item {
   display: flex;
-  flex-direction: column;
+  justify-content: space-between;
+  padding: 0.75rem 1rem;
+  background: #f8f9fa;
+  border-radius: 10px;
 }
 
 .label {
-  font-size: 0.75rem;
   color: #6c757d;
-  margin-bottom: 0.25rem;
+  font-size: 0.9rem;
 }
 
 .value {
-  font-size: 0.9rem;
   color: #495057;
   font-weight: 500;
 }
 
-.features h4 {
-  margin-bottom: 0.5rem;
-  color: #495057;
+/* Tech Stack */
+.tech-section {
+  margin-bottom: 1.5rem;
 }
 
-.features ul {
-  list-style: none;
-  padding: 0;
-  margin: 0;
+.tech-section:last-child {
+  margin-bottom: 0;
 }
 
-.features li {
-  padding: 0.5rem 0;
-  color: #495057;
-  border-bottom: 1px solid #e9ecef;
+.tech-section h3 {
+  font-size: 0.9rem;
+  color: #666;
+  margin-bottom: 1rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
 }
 
-.features li:last-child {
-  border-bottom: none;
+.tech-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
 }
 
-.features li::before {
-  content: '✓ ';
-  color: #28a745;
-  font-weight: bold;
-  margin-right: 0.5rem;
-}
-
-.error-card {
-  background: #f8d7da;
+.tech-item {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 0.75rem 1rem;
+  background: #f8f9fa;
   border-radius: 10px;
+  transition: background 0.3s;
+}
+
+.tech-item:hover {
+  background: #e9ecef;
+}
+
+.tech-icon {
+  font-size: 1.5rem;
+}
+
+.tech-info {
+  flex: 1;
+}
+
+.tech-name {
+  font-weight: 500;
+  color: #333;
+}
+
+.tech-desc {
+  font-size: 0.8rem;
+  color: #666;
+}
+
+/* Deployments */
+.deployments-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.deployment-item {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  gap: 1rem;
+  align-items: center;
   padding: 1rem;
-  color: #721c24;
+  background: #f8f9fa;
+  border-radius: 10px;
+  transition: background 0.3s;
+}
+
+.deployment-item:hover {
+  background: #e9ecef;
+}
+
+.dep-status {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: bold;
+}
+
+.dep-status.success {
+  background: #28a745;
+  color: white;
+}
+
+.dep-status.failed {
+  background: #dc3545;
+  color: white;
+}
+
+.dep-version {
+  font-weight: 600;
+  color: #333;
+}
+
+.dep-message {
+  font-size: 0.85rem;
+  color: #666;
+}
+
+.dep-meta {
+  text-align: right;
+}
+
+.dep-date {
+  font-size: 0.85rem;
+  color: #666;
+}
+
+.dep-commit {
+  font-family: monospace;
+  font-size: 0.8rem;
+  color: #667eea;
+}
+
+/* System Info */
+.system-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 1rem;
+}
+
+.system-item {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.75rem 1rem;
+  background: #f8f9fa;
+  border-radius: 10px;
+}
+
+.system-icon {
+  font-size: 1.25rem;
+}
+
+.system-text {
+  font-size: 0.9rem;
+  color: #495057;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .hero-title {
+    font-size: 2rem;
+  }
+
+  .grid-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .deployment-item {
+    grid-template-columns: auto 1fr;
+  }
+
+  .dep-meta {
+    grid-column: 2;
+  }
 }
 </style>
