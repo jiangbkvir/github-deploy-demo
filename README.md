@@ -1,159 +1,242 @@
-# GitHub 自动部署示例项目
+# GitHub Actions 自动部署示例
 
-这是一个完整的 GitHub 自动部署学习项目，包含前端页面和 Node.js 后端应用。
+完整的 GitHub Actions 自动部署学习项目，使用 **Vue 3 + TypeScript + Node.js + Docker** 构建。
+
+## 技术栈
+
+### 前端
+| 技术 | 版本 | 说明 |
+|------|------|------|
+| **Vue 3** | 3.5.13 | 渐进式 JavaScript 框架 |
+| **TypeScript** | 5.7.2 | 类型安全开发 |
+| **Vite** | 6.0.3 | 下一代前端构建工具 |
+| **Vue Router** | 4.5.0 | Vue.js 官方路由管理器 |
+| **Pinia** | 2.2.8 | Vue 官方状态管理库 |
+
+### 后端
+| 技术 | 说明 |
+|------|------|
+| **Node.js** | JavaScript 运行环境 |
+| **Express** | 简洁灵活的 Web 框架 |
+
+### 部署 & CI/CD
+| 技术 | 说明 |
+|------|------|
+| **Docker** | 容器化部署 |
+| **GitHub Actions** | 持续集成与部署 |
+| **Cloudflare Tunnel** | 内网穿透（本地部署） |
+| **Webhook** | 自动部署触发 |
 
 ## 项目结构
 
 ```
 github-deploy-demo/
-├── frontend/
-│   └── index.html          # 前端页面
-├── backend/
-│   ├── server.js           # Node.js 后端服务
-│   ├── package.json        # 后端依赖配置
-│   └── .dockerignore       # Docker 忽略文件
+├── frontend-vue/              # Vue 3 前端工程
+│   ├── src/
+│   │   ├── views/            # 页面组件
+│   │   │   ├── Home.vue      # 首页
+│   │   │   └── About.vue     # 关于页
+│   │   ├── stores/           # Pinia 状态管理
+│   │   │   └── app.ts        # 应用状态
+│   │   ├── router/           # Vue Router 路由
+│   │   │   └── index.ts      # 路由配置
+│   │   ├── components/       # 可复用组件
+│   │   ├── App.vue           # 根组件
+│   │   └── main.ts           # 应用入口
+│   ├── package.json
+│   ├── vite.config.ts        # Vite 配置
+│   └── tsconfig.json         # TypeScript 配置
+├── backend/                   # Node.js 后端
+│   ├── server.js             # Express 服务器
+│   ├── package.json          # 后端依赖
+│   └── .dockerignore
 ├── .github/
 │   └── workflows/
-│       └── deploy.yml      # GitHub Actions 工作流
-├── Dockerfile              # Docker 镜像构建文件
-├── docker-compose.yml      # Docker Compose 配置
-└── README.md               # 项目文档
+│       └── deploy.yml        # GitHub Actions 工作流
+├── webhook-server.js         # Webhook 监听服务
+├── Dockerfile                # 多阶段构建配置
+├── docker-compose.yml        # 本地运行配置
+└── README.md
 ```
 
-## 本地运行
+## 自动部署流程
 
-### 方式一：使用 Docker Compose (推荐)
+```
+┌─────────────────┐
+│   推送代码到    │
+│  GitHub 仓库    │
+└────────┬────────┘
+         │
+         ▼
+┌─────────────────┐
+│  GitHub Actions │
+│  构建 Docker    │
+│     镜像测试    │
+└────────┬────────┘
+         │
+         ▼
+┌─────────────────┐
+│ Cloudflare      │
+│ Tunnel (Webhook)│
+└────────┬────────┘
+         │
+         ▼
+┌─────────────────┐
+│   本地自动执行  │
+│  git pull +     │
+│ docker rebuild  │
+└────────┬────────┘
+         │
+         ▼
+    🎉 部署成功！
+```
+
+## 快速开始
+
+### 方式一：Docker Compose（推荐）
 
 ```bash
-cd /Users/ananiu/Documents/docker/github-deploy-demo
-docker-compose up -d
+# 克隆项目
+git clone https://github.com/jiangbkvir/github-deploy-demo.git
+cd github-deploy-demo
+
+# 构建并启动
+docker-compose up -d --build
 ```
 
 访问：http://localhost:3000
 
-### 方式二：直接运行 Node.js
+### 方式二：开发模式（前端）
 
 ```bash
-cd /Users/ananiu/Documents/docker/github-deploy-demo/backend
+# 前端开发服务器
+cd frontend-vue
+npm install
+npm run dev
+
+# 后端（另开终端）
+cd backend
 npm install
 npm start
 ```
 
-访问：http://localhost:3000
+前端开发服务器：http://localhost:5173
 
-## GitHub 自动部署配置
+## 本地自动部署配置
 
-### 步骤 1：创建 GitHub 仓库
+### 1. 启动 Webhook 服务
 
 ```bash
-cd /Users/ananiu/Documents/docker/github-deploy-demo
-git init
+node webhook-server.js
+```
+
+### 2. 启动内网穿透
+
+```bash
+# 使用 Cloudflare Tunnel
+cloudflared tunnel --url http://localhost:4000
+```
+
+获取公网地址，如：`https://xxx.trycloudflare.com`
+
+### 3. 配置 GitHub Secrets
+
+访问：https://github.com/jiangbkvir/github-deploy-demo/settings/secrets/actions
+
+| 名称 | 值 |
+|------|-----|
+| `WEBHOOK_URL` | 你的 Cloudflare Tunnel 地址 |
+| `WEBHOOK_SECRET` | `my-secret-key` |
+
+### 4. 测试自动部署
+
+```bash
 git add .
-git commit -m "Initial commit"
-# 在 GitHub 上创建新仓库后执行：
-git remote add origin https://github.com/你的用户名/github-deploy-demo.git
-git branch -M main
-git push -u origin main
+git commit -m "test: auto deploy"
+git push
 ```
 
-### 步骤 2：配置 GitHub Secrets
-
-在 GitHub 仓库中设置以下 Secrets (Settings → Secrets and variables → Actions):
-
-#### 方式 A：SSH 部署方式
-
-| Secret 名称 | 说明 | 示例值 |
-|------------|------|-------|
-| `SERVER_HOST` | 服务器 IP 或域名 | `123.45.67.89` |
-| `SERVER_USER` | SSH 用户名 | `root` |
-| `SSH_PRIVATE_KEY` | SSH 私钥 | `-----BEGIN OPENSSH PRIVATE KEY-----...` |
-| `SERVER_PORT` | SSH 端口 (可选) | `22` |
-
-生成 SSH 密钥：
-```bash
-ssh-keygen -t ed25519 -C "github-actions" -f ~/.ssh/github_actions
-# 将公钥添加到服务器
-ssh-copy-id -i ~/.ssh/github_actions.pub user@server
-# 将私钥内容复制到 GitHub Secrets
-cat ~/.ssh/github_actions
-```
-
-#### 方式 B：Webhook 部署方式 (更简单)
-
-| Secret 名称 | 说明 |
-|------------|------|
-| `WEBHOOK_URL` | 你的 Webhook 接收地址 |
-
-#### 方式 C：Docker Hub 推送 (可选)
-
-| Secret 名称 | 说明 |
-|------------|------|
-| `DOCKER_USERNAME` | Docker Hub 用户名 |
-| `DOCKER_PASSWORD` | Docker Hub 密码或访问令牌 |
-
-### 步骤 3：配置服务器
-
-在服务器上准备部署目录：
-
-```bash
-# 克隆代码
-git clone https://github.com/你的用户名/github-deploy-demo.git /path/to/app
-cd /path/to/app
-
-# 启动服务
-docker-compose up -d
-```
-
-### 步骤 4：部署流程
-
-配置完成后，每次 `push` 到 `main` 分支时会自动触发部署：
-
-```
-代码推送到 GitHub
-    ↓
-GitHub Actions 检测到推送
-    ↓
-构建 Docker 镜像
-    ↓
-连接服务器 (SSH) 或触发 Webhook
-    ↓
-拉取最新代码
-    ↓
-重启 Docker 容器
-    ↓
-部署完成！
-```
-
-## 端点说明
+## API 端点
 
 | 端点 | 方法 | 说明 |
 |------|------|------|
-| `/` | GET | 前端页面 |
-| `/api` | GET | API 接口 |
+| `/` | GET | 前端页面（Vue SPA） |
+| `/about` | GET | 关于页面 |
+| `/api` | GET | 获取后端数据 |
 | `/health` | GET | 健康检查 |
+
+## API 响应示例
+
+```json
+{
+  "success": true,
+  "message": "🎉 欢迎使用 GitHub Actions 自动部署！Vue 3 + TypeScript 版本",
+  "timestamp": "2025/12/23 16:59:17",
+  "environment": "production",
+  "version": "3.0.0",
+  "author": "jiangbkvir",
+  "features": [
+    "Vue 3",
+    "TypeScript",
+    "Vue Router",
+    "Pinia",
+    "Vite",
+    "Docker 容器化",
+    "GitHub Actions CI/CD"
+  ]
+}
+```
 
 ## 学习要点
 
-1. **Docker 镜像构建**：单 Dockerfile 同时包含前端和后端
-2. **GitHub Actions 工作流**：自动化构建和部署流程
-3. **多种部署方式**：SSH、Webhook、Docker Hub
-4. **健康检查**：确保服务正常运行
+### Docker 多阶段构建
+- 前端构建阶段：使用 Node.js 构建 Vue 应用
+- 后端运行阶段：复制构建产物，运行 Express 服务
+- 镜像优化：最终镜像只包含运行时文件
+
+### GitHub Actions CI/CD
+- 自动构建测试：每次推送验证 Docker 镜像构建
+- Webhook 触发：构建成功后自动通知本地部署
+
+### Vue 3 最佳实践
+- **Composition API**：`<script setup>` 语法
+- **TypeScript**：完整类型支持
+- **路由管理**：Vue Router 4
+- **状态管理**：Pinia（Vuex 继任者）
 
 ## 扩展建议
 
-- 添加数据库服务 (PostgreSQL/MySQL)
-- 添加 Nginx 反向代理
-- 配置 HTTPS 证书
-- 添加环境变量管理
-- 配置 CI/CD 测试流程
+- [ ] 添加单元测试（Vitest）
+- [ ] 添加 E2E 测试（Playwright）
+- [ ] 添加数据库（PostgreSQL + Prisma）
+- [ ] 配置 Nginx 反向代理
+- [ ] 添加 HTTPS 证书
+- [ ] 配置环境变量管理（dotenv）
 
 ## 常见问题
 
-**Q: GitHub Actions 失败怎么办？**
-A: 检查 Secrets 是否正确配置，查看 Actions 日志获取详细错误信息。
+**Q: 如何修改端口？**
+A: 修改 `docker-compose.yml` 中的端口映射，如 `8080:3000`
 
-**Q: 如何修改部署端口？**
-A: 修改 `docker-compose.yml` 中的端口映射，如 `8080:3000`。
+**Q: Cloudflare Tunnel 地址变了怎么办？**
+A: 更新 GitHub Secret 中的 `WEBHOOK_URL`
 
-**Q: 本地测试和线上环境如何区分？**
-A: 使用环境变量，在 `docker-compose.yml` 中配置不同的 `NODE_ENV`。
+**Q: 本地开发时前端如何调用后端 API？**
+A: Vite 已配置代理，`/api` 请求会自动转发到 `http://localhost:3000`
+
+## 相关文档
+
+- [Vue 3 文档](https://vuejs.org/)
+- [TypeScript 文档](https://www.typescriptlang.org/)
+- [Vite 文档](https://vitejs.dev/)
+- [Vue Router 文档](https://router.vuejs.org/)
+- [Pinia 文档](https://pinia.vuejs.org/)
+- [GitHub Actions 文档](https://docs.github.com/en/actions)
+
+## 许可证
+
+MIT
+
+## 作者
+
+[jiangbkvir](https://github.com/jiangbkvir)
