@@ -7,6 +7,12 @@ on:
     branches: [main, master]
   workflow_dispatch:
 
+env:
+  # 使用 ngrok 等内网穿透工具暴露本地 webhook 服务
+  # 示例: https://xxxx-xx-xx-xx-xx.ngrok-free.app
+  WEBHOOK_URL: ${{ secrets.WEBHOOK_URL }}
+  WEBHOOK_SECRET: ${{ secrets.WEBHOOK_SECRET }}
+
 jobs:
   # 构建 Docker 镜像测试
   build-test:
@@ -40,3 +46,12 @@ jobs:
           sleep 5
           curl -f http://localhost:3000/health || exit 1
           docker logs test-app
+
+      # 触发本地 Webhook（需要配置内网穿透）
+      - name: 触发本地自动部署
+        if: github.ref == 'refs/heads/main' && env.WEBHOOK_URL != ''
+        run: |
+          curl -X POST ${{ env.WEBHOOK_URL }}/webhook/deploy \
+            -H "Content-Type: application/json" \
+            -H "X-Webhook-Secret: ${{ env.WEBHOOK_SECRET }}" \
+            -d '{"action":"deploy","commit":"${{ github.sha }}","branch":"${{ github.ref_name }}"}'
